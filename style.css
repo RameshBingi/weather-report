@@ -1,0 +1,299 @@
+/* Responsive, modern styles for Weather Now component
+   Drop this into src/styles.css and keep import "./styles.css" in App.js
+*/
+
+/* Reset & base */
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Inter, "Segoe UI", Roboto, system-ui, -apple-system,
+    "Helvetica Neue", Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(180deg, #f8fafc 0, #ffffff 100%);
+  color: #0f172a;
+}
+
+/* Top-level app container */
+.min-h-screen {
+  min-height: 100vh;
+  padding: 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+/* centered card */
+.w-full.max-w-3xl,
+.max-w-3xl {
+  /* account for either combined or separate classes */
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+/* main card */
+main.bg-white {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.06);
+  padding: 18px;
+}
+
+/* header styles */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0b4ddb;
+}
+header p {
+  margin: 2px 0 0 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+/* units toggle (top-right) */
+header .inline-flex {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+header .inline-flex button {
+  border: 1px solid #e6eef8;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #0f172a;
+  transition: all 0.14s ease;
+}
+header .inline-flex button[aria-pressed="true"],
+header .inline-flex button:focus {
+  background: linear-gradient(180deg, #e6f0ff, #d6e8ff);
+  border-color: #bfd9ff;
+  outline: none;
+}
+
+/* search area */
+label.block {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #334155;
+}
+.relative {
+  position: relative;
+}
+input[aria-label="Search city"],
+input[placeholder] {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #e6eef8;
+  font-size: 15px;
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s;
+  background: #fbfdff;
+}
+input[aria-label="Search city"]:focus {
+  box-shadow: 0 8px 24px rgba(11, 77, 219, 0.08);
+  border-color: #cfe0ff;
+}
+
+/* suggestions dropdown (inside .relative) */
+.relative > ul {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  border: 1px solid #e6eef8;
+  border-radius: 10px;
+  max-height: 260px;
+  overflow: auto;
+  z-index: 40;
+  padding: 6px 0;
+  box-shadow: 0 8px 26px rgba(2, 6, 23, 0.08);
+}
+.relative > ul li {
+  padding: 10px 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.relative > ul li:hover {
+  background: #f1f5f9;
+}
+.relative > ul li .font-medium {
+  font-weight: 700;
+}
+.relative > ul li .text-xs {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+/* feedback states */
+.text-center {
+  text-align: center;
+}
+.text-red-600 {
+  color: #dc2626;
+}
+.text-slate-600 {
+  color: #475569;
+}
+
+/* grid layout for weather content */
+section.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+}
+
+/* left summary card (first child in the grid) */
+section.grid > div:first-child {
+  border-radius: 10px;
+  padding: 16px;
+  color: white;
+  background: linear-gradient(180deg, #0ea5e9, #2563eb);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 140px;
+}
+section.grid > div:first-child h2 {
+  margin: 0 0 6px 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+section.grid > div:first-child p {
+  margin: 0;
+  opacity: 0.95;
+  font-size: 13px;
+}
+section.grid > div:first-child .text-4xl {
+  font-size: 40px;
+  font-weight: 800;
+  margin-top: 8px;
+}
+
+/* right details card */
+section.grid > div:nth-child(2) {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid #eef2f7;
+}
+
+/* hourly scroll row: select inner .flex container under overflow-x-auto */
+.overflow-x-auto > .flex {
+  display: flex;
+  gap: 12px;
+  padding: 10px 2px;
+  overflow-x: auto;
+}
+.overflow-x-auto > .flex > div {
+  min-width: 110px;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #eef2f7;
+}
+.overflow-x-auto .text-xs {
+  color: #64748b;
+  font-size: 12px;
+}
+
+/* responsive layout */
+@media (min-width: 720px) {
+  /* top controls grid mimic */
+  .top-controls {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  /* make main grid 2-column (summary + details) */
+  section.grid {
+    grid-template-columns: 360px 1fr;
+    align-items: start;
+  }
+  section.grid > div:first-child {
+    min-height: 200px;
+  }
+  .overflow-x-auto > .flex > div {
+    min-width: 130px;
+  }
+}
+
+@media (min-width: 1100px) {
+  .w-full.max-w-3xl,
+  .max-w-3xl {
+    max-width: 1100px;
+  }
+  section.grid > div:first-child .text-4xl {
+    font-size: 56px;
+  }
+  .overflow-x-auto > .flex > div {
+    min-width: 150px;
+  }
+}
+
+/* small utilities for spacing and text */
+.space-y-4 > * + * {
+  margin-top: 12px;
+}
+.mb-4 {
+  margin-bottom: 12px;
+}
+.mt-4 {
+  margin-top: 12px;
+}
+
+/* footer */
+footer.text-xs {
+  margin-top: 14px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* subtle focus style for interactive cards */
+.relative > ul li:focus,
+input[aria-label="Search city"]:focus {
+  outline: none;
+  box-shadow: 0 8px 20px rgba(11, 77, 219, 0.06);
+}
+
+/* small fixes to ensure consistent look when Tailwind-like classes exist */
+.bg-slate-50 {
+  background: #f8fafc !important;
+}
+.rounded-md {
+  border-radius: 8px;
+}
+.border {
+  border: 1px solid #e6eef8;
+}
+.p-4 {
+  padding: 16px;
+}
+
+/* end of stylesheet */
