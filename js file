@@ -1,0 +1,310 @@
+import "./styles.css";
+
+import React, { useState, useEffect } from "react";
+
+
+
+// Weather Now — Single-file React component (suitable for Vite / CodeSandbox)
+// - Uses Open-Meteo public APIs (geocoding + forecast)
+// - Tailwind CSS classes used for styling (assumes Tailwind is available)
+// - Features: city search, current weather, hourly mini-forecast, unit toggle (C / F), loading & error states
+
+export default function WeatherNowApp() {
+  const [query, setQuery] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [selected, setSelected] = useState(null); // {name, latitude, longitude, country}
+  const [weather, setWeather] = useState(null);
+  const [unit, setUnit] = useState("celsius"); // 'celsius' or 'fahrenheit'
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Helper: fetch geocoding suggestions for a name
+  async function fetchGeocoding(q) {
+    if (!q || q.trim().length < 1) {
+      setSuggestions([]);
+      return;
+    }
+    try {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+        q
+      )}&count=6&language=en&format=json`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch locations");
+      const json = await res.json();
+      setSuggestions(json.results || []);
+    } catch (err) {
+      console.error(err);
+      setSuggestions([]);
+    }
+  }
+
+  // When user selects a place, fetch weather
+  async function fetchWeatherForPlace(place) {
+    if (!place) return;
+    setSelected(place);
+    setWeather(null);
+    setError("");
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        latitude: String(place.latitude),
+        longitude: String(place.longitude),
+        current_weather: "true",
+        hourly:
+          "temperature_2m,relativehumidity_2m,apparent_temperature,weathercode",
+        timezone: "auto",
+      });
+      // add temperature unit
+      if (unit === "fahrenheit")
+        params.append("temperature_unit", "fahrenheit");
+      const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch weather");
+      const json = await res.json();
+      setWeather(json);
+    } catch (err) {
+      console.error(err);
+      setError("Could not fetch weather. Try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Debounced search effect for the query input
+  useEffect(() => {
+    const id = setTimeout(() => {
+      fetchGeocoding(query);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [query]);
+
+  // When unit changes and a place is selected, refetch to get different units
+  useEffect(() => {
+    if (selected) fetchWeatherForPlace(selected);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unit]);
+
+  const handleSelectSuggestion = (s) => {
+    setQuery(
+      `${s.name}${s.admin1 ? ", " + s.admin1 : ""}${
+        s.country ? ", " + s.country : ""
+      }`
+    );
+    setSuggestions([]);
+    fetchWeatherForPlace(s);
+  };
+
+  // Small mapping of Open-Meteo weather codes to readable text (not exhaustive)
+  const weatherCodeMap = {
+    0: "Clear sky",
+    1: "Mainly clear",
+    2: "Partly cloudy",
+    3: "Overcast",
+    45: "Fog",
+    48: "Depositing rime fog",
+    51: "Drizzle: Light",
+    53: "Drizzle: Moderate",
+    55: "Drizzle: Dense",
+    61: "Rain: Slight",
+    63: "Rain: Moderate",
+    65: "Rain: Heavy",
+    71: "Snow: Slight",
+    73: "Snow: Moderate",
+    75: "Snow: Heavy",
+    80: "Rain showers: Slight",
+    81: "Rain showers: Moderate",
+    82: "Rain showers: Violent",
+  };
+
+  function readableWeatherCode(code) {
+    return weatherCodeMap[code] || "Weather";
+  }
+
+  function formatTime(t) {
+    try {
+      return new Date(t).toLocaleString();
+    } catch (e) {
+      return t;
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 flex flex-col items-center">
+      <div className="w-full max-w-3xl">
+        <header className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold">Weather Now</h1>
+            <p className="text-sm text-slate-600">
+              Quick current weather & hourly snapshot (Open‑Meteo)
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600">Units</label>
+            <div className="inline-flex rounded-md overflow-hidden border bg-white">
+              <button
+                onClick={() => setUnit("celsius")}
+                className={`px-3 py-1 text-sm ${
+                  unit === "celsius" ? "bg-slate-200" : ""
+                }`}
+                aria-pressed={unit === "celsius"}
+              >
+                °C
+              </button>
+              <button
+                onClick={() => setUnit("fahrenheit")}
+                className={`px-3 py-1 text-sm ${
+                  unit === "fahrenheit" ? "bg-slate-200" : ""
+                }`}
+                aria-pressed={unit === "fahrenheit"}
+              >
+                °F
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main className="bg-white shadow-sm rounded-lg p-4">
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
+              Search city or place
+            </label>
+            <div className="relative">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="e.g. New Delhi, London, Tokyo"
+                className="w-full rounded-md border px-3 py-2 focus:outline-none focus:ring"
+                aria-label="Search city"
+              />
+              {suggestions.length > 0 && (
+                <ul className="absolute z-10 left-0 right-0 bg-white border rounded-b-md max-h-56 overflow-auto mt-1">
+                  {suggestions.map((s) => (
+                    <li
+                      key={`${s.id || s.latitude}-${s.longitude}`}
+                      className="px-3 py-2 hover:bg-slate-100 cursor-pointer"
+                      onClick={() => handleSelectSuggestion(s)}
+                    >
+                      <div className="font-medium">
+                        {s.name}
+                        {s.admin1 ? `, ${s.admin1}` : ""}
+                      </div>
+                      <div className="text-xs text-slate-600">
+                        {s.country} — {s.latitude.toFixed(2)},{" "}
+                        {s.longitude.toFixed(2)}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {loading && (
+              <div className="text-center py-8">Loading weather…</div>
+            )}
+
+            {error && <div className="text-red-600">{error}</div>}
+
+            {!loading && weather && (
+              <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-1 bg-gradient-to-br from-sky-500 to-indigo-500 text-white rounded-lg p-4 flex flex-col justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold">
+                      {selected?.name}
+                      {selected?.admin1 ? `, ${selected.admin1}` : ""}
+                    </h2>
+                    <p className="text-sm opacity-90">{selected?.country}</p>
+                  </div>
+
+                  <div className="mt-4">
+                    <div className="text-4xl font-bold">
+                      {weather.current_weather.temperature}°
+                      {unit === "celsius" ? "C" : "F"}
+                    </div>
+                    <div className="text-sm opacity-90 mt-1">
+                      {readableWeatherCode(weather.current_weather.weathercode)}
+                    </div>
+                    <div className="text-xs mt-2">
+                      Wind: {weather.current_weather.windspeed} m/s
+                    </div>
+                    <div className="text-xs">
+                      Time: {formatTime(weather.current_weather.time)}
+                    </div>
+                  </div>
+
+                  <div className="text-xs mt-4 opacity-80">
+                    Source: Open‑Meteo • Data may be delayed
+                  </div>
+                </div>
+
+                <div className="md:col-span-2 bg-white rounded-lg p-3 border">
+                  <h3 className="text-sm font-medium mb-2">
+                    Hourly snapshot (next hours)
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <div className="flex gap-3 py-2">
+                      {Array.from({
+                        length: Math.min(weather.hourly.time.length, 24),
+                      }).map((_, i) => {
+                        const t = weather.hourly.time[i];
+                        const temp = weather.hourly.temperature_2m[i];
+                        const hum = weather.hourly.relativehumidity_2m
+                          ? weather.hourly.relativehumidity_2m[i]
+                          : null;
+                        const wcode = weather.hourly.weathercode
+                          ? weather.hourly.weathercode[i]
+                          : null;
+                        return (
+                          <div
+                            key={t}
+                            className="min-w-[110px] bg-slate-50 rounded-md p-2 flex-shrink-0 text-center border"
+                          >
+                            <div className="text-xs text-slate-600">
+                              {new Date(t).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </div>
+                            <div className="text-lg font-semibold mt-1">
+                              {Math.round(temp)}°
+                            </div>
+                            <div className="text-xs opacity-80">
+                              {wcode !== null ? readableWeatherCode(wcode) : ""}
+                            </div>
+                            {hum !== null && (
+                              <div className="text-xs mt-1">
+                                RH: {Math.round(hum)}%
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-3 text-sm text-slate-600">
+                    Tip: Click the city search suggestions to load weather for
+                    that location. Use the Units toggle at the top to switch °C
+                    / °F.
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {!loading && !weather && !error && (
+              <div className="text-center text-slate-600 py-6">
+                Search for a place above to see current weather.
+              </div>
+            )}
+          </div>
+        </main>
+
+        <footer className="text-xs text-slate-500 text-center mt-4">
+          Built with Open‑Meteo • Geocoding: geocoding-api.open-meteo.com •
+          Forecast: api.open-meteo.com
+        </footer>
+      </div>
+    </div>
+  );
+}
